@@ -732,11 +732,36 @@ async function loadCloudWorkspace() {
   saveProfiles();
 }
 
+function showPasswordRecovery() {
+  $("#resetPasswordForm").hidden = false;
+  $("#authForm").hidden = true;
+  $("#forgotPasswordButton").hidden = true;
+  openProfileModal();
+  $("#resetPasswordForm").hidden = false;
+  $("#newPassword").focus();
+}
+
 async function initializeCloudAuth() {
   if (!supabaseClient) {
     showToast("Configuração do Supabase não encontrada.");
     return;
   }
+
+  // Registra o evento antes de ler a sessão para não perder o retorno do link de recuperação.
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY" && session?.user) {
+      authUser = session.user;
+      showPasswordRecovery();
+      showToast("Link confirmado! Escolha sua nova senha.");
+      return;
+    }
+    if (!session?.user) {
+      authUser = null;
+      cloudSyncReady = false;
+      setAuthInterface(null);
+    }
+  });
+
   const { data, error } = await supabaseClient.auth.getSession();
   if (error) console.error(error);
   if (data?.session?.user) {
@@ -754,13 +779,49 @@ async function initializeCloudAuth() {
     }
   }
   setAuthInterface(authUser);
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
-    if (!session?.user) {
-      authUser = null;
-      cloudSyncReady = false;
-      setAuthInterface(null);
-    }
+
+  // Fallback para links de recuperação que já chegaram à página antes do listener.
+  if (window.location.hash.includes("type=recovery")) {
+    showPasswordRecovery();
+  }
+}
+
+async function requestPasswordReset() {
+  if (!supabaseClient) return showToast("Configuração do Supabase não encontrada.");
+  const email = $("#authEmail").value.trim();
+  if (!email) return showToast("Digite seu e-mail no campo acima para receber o link.");
+  const redirectUrl = new URL(window.location.href);
+  redirectUrl.search = "";
+  redirectUrl.hash = "";
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectUrl.toString()
   });
+  if (error) {
+    console.error("Falha ao solicitar recuperação:", error);
+    return showToast("Não foi possível enviar o e-mail. Confira o endereço e tente novamente.");
+  }
+  showToast("E-mail de recuperação enviado! Confira sua caixa de entrada.");
+}
+
+async function updateRecoveredPassword(event) {
+  event.preventDefault();
+  if (!supabaseClient) return showToast("Configuração do Supabase não encontrada.");
+  const password = $("#newPassword").value;
+  const confirmation = $("#confirmNewPassword").value;
+  if (password.length < 6) return showToast("A senha precisa ter pelo menos 6 caracteres.");
+  if (password !== confirmation) return showToast("As senhas não são iguais.");
+  const { error } = await supabaseClient.auth.updateUser({ password });
+  if (error) {
+    console.error("Falha ao atualizar senha:", error);
+    return showToast("Não foi possível alterar a senha. Solicite um novo link de recuperação.");
+  }
+  $("#resetPasswordForm").hidden = true;
+  $("#authForm").hidden = false;
+  $("#forgotPasswordButton").hidden = false;
+  $("#newPassword").value = "";
+  $("#confirmNewPassword").value = "";
+  setAuthInterface(authUser);
+  showToast("Senha alterada com sucesso! Você já pode entrar com ela.");
 }
 
 async function signInToCloud(event) {
@@ -826,6 +887,8 @@ async function signOutFromCloud() {
 $("#taskForm").addEventListener("submit", saveTask);
 $("#authForm").addEventListener("submit", signInToCloud);
 $("#signUpButton").addEventListener("click", signUpToCloud);
+$("#forgotPasswordButton").addEventListener("click", requestPasswordReset);
+$("#resetPasswordForm").addEventListener("submit", updateRecoveredPassword);
 $("#signOutButton").addEventListener("click", signOutFromCloud);
 $("#taskDescription").addEventListener("input", updateDescriptionCounter);
 $("#addSubtaskButton").addEventListener("click", addSubtask);
