@@ -224,7 +224,23 @@
         <div class="profile-list-heading"><strong>Perfis neste dispositivo</strong><span>Alterne entre seus espaços</span></div>
         <div id="profileList" class="profile-list"></div>
       </div>
-      <p class="profile-local-note">Os perfis e as tarefas ficam salvos neste navegador e neste dispositivo.</p>
+
+      <div class="profile-list-section auth-section">
+        <div class="profile-list-heading"><strong>Conta e sincronização</strong><span id="authStatus">Não conectado</span></div>
+        <form id="authForm">
+          <label class="field-label" for="authEmail">E-mail da conta</label>
+          <input class="form-control" id="authEmail" type="email" autocomplete="email" placeholder="seuemail@exemplo.com" required>
+          <label class="field-label" for="authPassword">Senha</label>
+          <input class="form-control" id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Pelo menos 6 caracteres" required>
+          <div class="modal-actions auth-actions">
+            <button class="secondary-button" id="signUpButton" type="button">Criar conta</button>
+            <button class="primary-button" id="signInButton" type="submit">Entrar</button>
+          </div>
+        </form>
+        <button class="secondary-button" id="signOutButton" type="button" hidden>Sair da conta</button>
+        <p class="profile-local-note">Ao entrar, seus perfis e tarefas serão sincronizados com sua conta para você acessá-los em outros dispositivos.</p>
+      </div>
+      <p class="profile-local-note">Sem entrar, seus dados continuam salvos apenas neste navegador.</p>
     </section>
   </div>
 
