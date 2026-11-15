@@ -2,7 +2,13 @@ const STORAGE_KEY = "taskly_tarefas_v2";
 const THEME_KEY = "taskly_tema_v1";
 
 const $ = (selector) => document.querySelector(selector);
-const $$ = (selector) => [...document.querySelectorAll(selector)];
+const $ = (selector) => [...document.querySelectorAll(selector)];
+const supabaseClient = window.supabase?.createClient(
+  window.TASKLY_SUPABASE_URL,
+  window.TASKLY_SUPABASE_PUBLISHABLE_KEY
+);
+let authUser = null;
+let cloudSyncReady = false;
 
 const todayISO = () => {
   const date = new Date();
@@ -586,8 +592,226 @@ function switchProfile(profileId) {
   showToast(`Você entrou no perfil ${nextProfile.name}.`);
 }
 
-// Eventos do formulário e da janela
+
+function setAuthInterface(user) {
+  const status = $("#authStatus");
+  const signOut = $("#signOutButton");
+  const signIn = $("#signInButton");
+  const signUp = $("#signUpButton");
+  if (user) {
+    status.textContent = user.email || "Conta conectada";
+    signOut.hidden = false;
+    signIn.hidden = true;
+    signUp.hidden = true;
+    $("#authEmail").value = user.email || "";
+    $("#authEmail").disabled = true;
+    $("#authPassword").hidden = true;
+    $("#authPassword").required = false;
+  } else {
+    status.textContent = "Não conectado";
+    signOut.hidden = true;
+    signIn.hidden = false;
+    signUp.hidden = false;
+    $("#authEmail").disabled = false;
+    $("#authPassword").hidden = false;
+    $("#authPassword").required = true;
+  }
+}
+
+function toCloudTask(task, profileId) {
+  return {
+    id: task.id,
+    profile_id: profileId,
+    title: task.title,
+    description: task.description || "",
+    category: task.category || "Outros",
+    priority: task.priority || "medium",
+    due_date: task.date || null,
+    due_time: task.time || null,
+    completed: Boolean(task.completed),
+    subtasks: Array.isArray(task.subtasks) ? task.subtasks : [],
+    created_at: new Date(task.createdAt || Date.now()).toISOString(),
+    updated_at: new Date(task.updatedAt || Date.now()).toISOString(),
+    completed_at: task.completedAt ? new Date(task.completedAt).toISOString() : null
+  };
+}
+
+function fromCloudTask(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description || "",
+    category: row.category || "Outros",
+    priority: row.priority || "medium",
+    date: row.due_date || "",
+    time: row.due_time || "",
+    completed: Boolean(row.completed),
+    subtasks: Array.isArray(row.subtasks) ? row.subtasks : [],
+    createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+    updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : Date.now(),
+    completedAt: row.completed_at ? new Date(row.completed_at).getTime() : null
+  };
+}
+
+async function syncTasksToCloud(profile) {
+  if (!profile?.id || !authUser) return;
+  const rows = (profile.tasks || []).map(task => toCloudTask(task, profile.id));
+  if (rows.length) {
+    const { error } = await supabaseClient.from("tasks").upsert(rows, { onConflict: "id" });
+    if (error) throw error;
+  }
+  const { data: existing, error: readError } = await supabaseClient
+    .from("tasks").select("id").eq("profile_id", profile.id);
+  if (readError) throw readError;
+  const keep = new Set(rows.map(row => row.id));
+  const stale = (existing || []).map(row => row.id).filter(id => !keep.has(id));
+  if (stale.length) {
+    const { error } = await supabaseClient.from("tasks").delete().in("id", stale);
+    if (error) throw error;
+  }
+}
+
+async function migrateLocalWorkspaceToCloud() {
+  const localProfiles = profiles.map(profile => ({ ...profile, tasks: [...(profile.tasks || [])] }));
+  const migrated = [];
+  for (const local of localProfiles) {
+    const { data: profileRow, error } = await supabaseClient.from("profiles")
+      .insert({ owner_id: authUser.id, name: local.name || "Meu perfil", email: local.email || "", bio: local.bio || "" })
+      .select().single();
+    if (error) throw error;
+    const cloudProfile = { id: profileRow.id, name: profileRow.name, email: profileRow.email || "", bio: profileRow.bio || "", tasks: [] };
+    const taskRows = (local.tasks || []).map(task => toCloudTask(task, profileRow.id));
+    if (taskRows.length) {
+      const { error: taskError } = await supabaseClient.from("tasks").insert(taskRows);
+      if (taskError) throw taskError;
+    }
+    cloudProfile.tasks = local.tasks || [];
+    migrated.push({ oldId: local.id, profile: cloudProfile });
+  }
+  const active = migrated.find(item => item.oldId === activeProfileId) || migrated[0];
+  profiles = migrated.map(item => item.profile);
+  activeProfileId = active?.profile.id || profiles[0].id;
+  tasks = getActiveProfile()?.tasks || [];
+  saveProfiles();
+}
+
+async function loadCloudWorkspace() {
+  const { data: cloudProfiles, error } = await supabaseClient.from("profiles")
+    .select("id,name,email,bio").eq("owner_id", authUser.id).order("created_at", { ascending: true });
+  if (error) throw error;
+  if (!cloudProfiles?.length) {
+    await migrateLocalWorkspaceToCloud();
+    return;
+  }
+  const ids = cloudProfiles.map(profile => profile.id);
+  const { data: cloudTasks, error: taskError } = await supabaseClient.from("tasks")
+    .select("*").in("profile_id", ids).order("created_at", { ascending: false });
+  if (taskError) throw taskError;
+  profiles = cloudProfiles.map(profile => ({
+    id: profile.id, name: profile.name, email: profile.email || "", bio: profile.bio || "",
+    tasks: (cloudTasks || []).filter(task => task.profile_id === profile.id).map(fromCloudTask)
+  }));
+  const savedActive = localStorage.getItem("taskly_perfil_ativo");
+  activeProfileId = profiles.some(profile => profile.id === savedActive) ? savedActive : profiles[0].id;
+  tasks = getActiveProfile().tasks || [];
+  saveProfiles();
+}
+
+async function initializeCloudAuth() {
+  if (!supabaseClient) {
+    showToast("Configuração do Supabase não encontrada.");
+    return;
+  }
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) console.error(error);
+  if (data?.session?.user) {
+    authUser = data.session.user;
+    try {
+      await loadCloudWorkspace();
+      cloudSyncReady = true;
+      updateProfileDisplay();
+      renderProfileList();
+      setFilter("all");
+      showToast("Conta conectada e tarefas sincronizadas!");
+    } catch (syncError) {
+      console.error(syncError);
+      showToast("Não foi possível carregar a nuvem. Verifique as políticas do Supabase.");
+    }
+  }
+  setAuthInterface(authUser);
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    if (!session?.user) {
+      authUser = null;
+      cloudSyncReady = false;
+      setAuthInterface(null);
+    }
+  });
+}
+
+async function signInToCloud(event) {
+  event.preventDefault();
+  if (!supabaseClient) return showToast("Configuração do Supabase não encontrada.");
+  const email = $("#authEmail").value.trim();
+  const password = $("#authPassword").value;
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) return showToast(error.message);
+  authUser = data.user;
+  try {
+    await loadCloudWorkspace();
+    cloudSyncReady = true;
+    setAuthInterface(authUser);
+    updateProfileDisplay();
+    renderProfileList();
+    setFilter("all");
+    closeProfileModal();
+    showToast("Login realizado e tarefas sincronizadas!");
+  } catch (syncError) {
+    console.error(syncError);
+    showToast("Login feito, mas houve erro ao sincronizar. Confira as tabelas e políticas.");
+  }
+}
+
+async function signUpToCloud() {
+  if (!supabaseClient) return showToast("Configuração do Supabase não encontrada.");
+  const email = $("#authEmail").value.trim();
+  const password = $("#authPassword").value;
+  if (!email || password.length < 6) return showToast("Informe um e-mail e uma senha com pelo menos 6 caracteres.");
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  if (error) return showToast(error.message);
+  if (!data.session) {
+    showToast("Conta criada! Confirme seu e-mail e depois entre no Taskly.");
+    return;
+  }
+  authUser = data.user;
+  try {
+    await loadCloudWorkspace();
+    cloudSyncReady = true;
+    setAuthInterface(authUser);
+    updateProfileDisplay();
+    renderProfileList();
+    setFilter("all");
+    closeProfileModal();
+    showToast("Conta criada e tarefas sincronizadas!");
+  } catch (syncError) {
+    console.error(syncError);
+    showToast("Conta criada, mas houve erro ao sincronizar os dados.");
+  }
+}
+
+async function signOutFromCloud() {
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) return showToast(error.message);
+  authUser = null;
+  cloudSyncReady = false;
+  setAuthInterface(null);
+  showToast("Você saiu da conta. Os dados locais foram mantidos.");
+}
+
+\n// Eventos do formulário e da janela
 $("#taskForm").addEventListener("submit", saveTask);
+$("#authForm").addEventListener("submit", signInToCloud);
+$("#signUpButton").addEventListener("click", signUpToCloud);
+$("#signOutButton").addEventListener("click", signOutFromCloud);
 $("#taskDescription").addEventListener("input", updateDescriptionCounter);
 $("#addSubtaskButton").addEventListener("click", addSubtask);
 $("#subtaskInput").addEventListener("keydown", event => {
@@ -683,3 +907,4 @@ saveProfiles();
 updateProfileDisplay();
 setDateAndGreeting();
 renderTasks();
+\ninitializeCloudAuth();\n
