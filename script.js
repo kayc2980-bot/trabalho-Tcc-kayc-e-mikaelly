@@ -2,7 +2,7 @@ const STORAGE_KEY = "taskly_tarefas_v2";
 const THEME_KEY = "taskly_tema_v1";
 
 const $ = (selector) => document.querySelector(selector);
-const $ = (selector) => [...document.querySelectorAll(selector)];
+const $$ = (selector) => [...document.querySelectorAll(selector)];
 const supabaseClient = window.supabase?.createClient(
   window.TASKLY_SUPABASE_URL,
   window.TASKLY_SUPABASE_PUBLISHABLE_KEY
