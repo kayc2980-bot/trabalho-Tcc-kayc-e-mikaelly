@@ -797,8 +797,12 @@ async function requestPasswordReset() {
     redirectTo: redirectUrl.toString()
   });
   if (error) {
-    console.error("Falha ao solicitar recuperação:", error);
-    return showToast("Não foi possível enviar o e-mail. Confira o endereço e tente novamente.");
+    console.error("Falha ao solicitar recuperação:", {
+      message: error.message,
+      status: error.status,
+      code: error.code
+    });
+    return showToast(`Erro do Supabase: ${error.message} (código: ${error.code || error.status || "não informado"})`);
   }
   showToast("E-mail de recuperação enviado! Confira sua caixa de entrada.");
 }
