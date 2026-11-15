@@ -404,3 +404,16 @@ body.dark .hero { box-shadow: none; }
 .profile-local-note { margin: 13px 0 0; line-height: 1.5; }
 
 .profile-button { font-family: inherit; }
+
+ 
+.text-button {
+  display: inline-block; margin-top: 10px; padding: 4px 0; border: 0;
+  color: var(--primary); background: transparent; font: 600 10px 'DM Sans', sans-serif;
+  cursor: pointer;
+}
+.text-button:hover { text-decoration: underline; }
+.password-reset-form {
+  margin-top: 15px; padding: 14px; border: 1px solid var(--line);
+  border-radius: 10px; background: var(--surface-soft);
+}
+.password-reset-form[hidden], #authForm[hidden], #forgotPasswordButton[hidden] { display: none !important; }
