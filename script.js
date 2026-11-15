@@ -922,4 +922,4 @@ saveProfiles();
 updateProfileDisplay();
 setDateAndGreeting();
 renderTasks();
-\ninitializeCloudAuth();\n
+initializeCloudAuth();
