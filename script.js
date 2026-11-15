@@ -822,7 +822,7 @@ async function signOutFromCloud() {
   showToast("Você saiu da conta. Os dados locais foram mantidos.");
 }
 
-\n// Eventos do formulário e da janela
+// Eventos do formulário e da janela
 $("#taskForm").addEventListener("submit", saveTask);
 $("#authForm").addEventListener("submit", signInToCloud);
 $("#signUpButton").addEventListener("click", signUpToCloud);
