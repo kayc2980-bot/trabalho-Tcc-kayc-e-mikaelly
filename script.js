@@ -63,6 +63,21 @@ function getActiveProfile() {
 function saveProfiles() {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profiles));
   localStorage.setItem("taskly_perfil_ativo", activeProfileId);
+  if (authUser && cloudSyncReady) {
+    const rows = profiles.map(profile => ({
+      id: profile.id,
+      owner_id: authUser.id,
+      name: profile.name || "Meu perfil",
+      email: profile.email || "",
+      bio: profile.bio || ""
+    }));
+    supabaseClient.from("profiles").upsert(rows, { onConflict: "id" }).then(({ error }) => {
+      if (error) {
+        console.error("Falha ao salvar perfis na nuvem:", error);
+        showToast("Não foi possível sincronizar os dados do perfil.");
+      }
+    });
+  }
 }
 
 function saveTasks() {
