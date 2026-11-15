@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f6f7fb">
+  <meta name="description" content="Taskly — seu espaço para organizar tarefas, ideias e projetos.">
+  <title>Taskly — Organize seu dia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#" aria-label="Taskly início">
+        <span class="brand-icon"><i></i><i></i><i></i></span>
+        <span>taskly<span class="brand-period">.</span></span>
+      </a>
+
+      <div class="side-label">MENU PRINCIPAL</div>
+      <nav class="navigation" aria-label="Menu principal">
+        <button class="nav-link active" data-filter="all"><span class="nav-symbol">▦</span> Visão geral <span class="nav-number" id="allCount">0</span></button>
+        <button class="nav-link" data-filter="today"><span class="nav-symbol">◷</span> Hoje <span class="nav-number" id="todayCount">0</span></button>
+        <button class="nav-link" data-filter="upcoming"><span class="nav-symbol">▤</span> Próximas</button>
+        <button class="nav-link" data-filter="pending"><span class="nav-symbol">○</span> Pendentes</button>
+        <button class="nav-link" data-filter="completed"><span class="nav-symbol">✓</span> Concluídas</button>
+      </nav>
+
+      <div class="side-divider"></div>
+      <div class="side-label">CATEGORIAS</div>
+      <nav class="category-navigation" aria-label="Categorias">
+        <button class="category-link" data-category="Estudos"><span class="category-dot violet"></span> Estudos</button>
+        <button class="category-link" data-category="Pessoal"><span class="category-dot blue"></span> Pessoal</button>
+        <button class="category-link" data-category="Trabalho"><span class="category-dot orange"></span> Trabalho</button>
+        <button class="category-link" data-category="Outros"><span class="category-dot green"></span> Outros</button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-mini-card">
+          <span class="mini-card-icon">✦</span>
+          <strong>Seu espaço, suas conquistas.</strong>
+          <span>Um lugar para tirar os planos do papel.</span>
+        </div>
+        <button class="profile profile-button" id="openProfileButton" type="button">
+          <div class="profile-avatar" id="sidebarAvatar">T</div>
+          <div class="profile-text"><strong id="sidebarProfileName">Meu perfil</strong><span id="sidebarProfileEmail">Área pessoal</span></div>
+          <span class="profile-menu">⚙</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Abrir menu">☰</button>
+        <div class="breadcrumb"><span id="breadcrumbProfileName">Meu espaço</span> <span>/</span> <strong id="breadcrumbTitle">Visão geral</strong></div>
+        <div class="topbar-actions">
+          <span class="today-date" id="currentDate"></span>
+          <button class="icon-button" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">☾</button>
+          <button class="profile-avatar top-avatar profile-open-top" id="topProfileButton" type="button" aria-label="Abrir perfil">T</button>
+        </div>
+      </header>
+
+      <div class="content-wrap">
+        <section class="hero">
+          <div class="hero-copy">
+            <span class="eyebrow"><span></span> SEU ESPAÇO, SEU RITMO</span>
+            <h1>Faça acontecer<span>.</span></h1>
+            <p>Suas tarefas, suas ideias e seus próximos passos em um só lugar.</p>
+            <button class="hero-button" id="heroAddButton"><span>＋</span> Criar tarefa</button>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="art-ring ring-a"></div><div class="art-ring ring-b"></div>
+            <div class="art-card"><span class="art-check">✓</span><span class="art-lines"><i></i><i></i><i></i></span></div>
+            <div class="art-spark spark-a">✦</div><div class="art-spark spark-b">✧</div>
+          </div>
+          <span class="hero-caption">ORGANIZE. REALIZE. REPITA.</span>
+        </section>
+
+        <section class="welcome-row">
+          <div>
+            <p class="greeting" id="greeting">BOM TRABALHO COMEÇA COM UM PLANO</p>
+            <h2 id="sectionHeading">Sua visão geral</h2>
+            <p class="muted" id="sectionSubheading">Tudo o que você precisa organizar, em um só lugar.</p>
+          </div>
+          <button class="primary-button" id="addTaskButton"><span>＋</span> Nova tarefa</button>
+        </section>
+
+        <section class="stats-grid" aria-label="Resumo">
+          <article class="stat-card">
+            <div class="stat-card-top"><span>Total de tarefas</span><span class="stat-icon purple-bg">▦</span></div>
+            <strong class="stat-value" id="totalStat">0</strong>
+            <span class="stat-foot">Tarefas no seu espaço</span>
+          </article>
+          <article class="stat-card">
+            <div class="stat-card-top"><span>Em andamento</span><span class="stat-icon orange-bg">◷</span></div>
+            <strong class="stat-value" id="pendingStat">0</strong>
+            <span class="stat-foot">Ainda podem ser feitas</span>
+          </article>
+          <article class="stat-card">
+            <div class="stat-card-top"><span>Concluídas</span><span class="stat-icon green-bg">✓</span></div>
+            <strong class="stat-value" id="completedStat">0</strong>
+            <span class="stat-foot">Cada passo conta</span>
+          </article>
+          <article class="stat-card progress-card">
+            <div class="stat-card-top"><span>Seu progresso</span><span class="stat-icon blue-bg">↗</span></div>
+            <strong class="stat-value"><span id="progressStat">0</span><small>%</small></strong>
+            <div class="progress-track"><span id="progressBar"></span></div>
+            <span class="stat-foot">Continue no seu ritmo</span>
+          </article>
+        </section>
+
+        <section class="tasks-panel">
+          <div class="panel-heading">
+            <div><h3>Suas tarefas</h3><p class="muted" id="taskCountLabel">Organize o que precisa ser feito.</p></div>
+            <div class="task-tools">
+              <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Buscar tarefas..." aria-label="Buscar tarefas"></label>
+              <select id="sortSelect" class="sort-select" aria-label="Ordenar tarefas">
+                <option value="date">Data mais próxima</option>
+                <option value="priority">Maior prioridade</option>
+                <option value="newest">Mais recentes</option>
+                <option value="alphabetical">Ordem alfabética</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-tabs" role="tablist" aria-label="Filtros">
+            <button class="filter-tab active" data-filter="all">Todas <span id="tabAll">0</span></button>
+            <button class="filter-tab" data-filter="pending">Pendentes <span id="tabPending">0</span></button>
+            <button class="filter-tab" data-filter="completed">Concluídas <span id="tabCompleted">0</span></button>
+          </div>
+
+          <div class="task-list" id="taskList" aria-live="polite"></div>
+          <div class="empty-state" id="emptyState" hidden>
+            <div class="empty-icon">✦</div><h4>Nenhuma tarefa encontrada</h4>
+            <p>Quando você criar uma tarefa, ela aparecerá aqui.</p>
+            <button class="primary-button" id="emptyAddButton">＋ Criar tarefa</button>
+          </div>
+
+          <div class="panel-footer">
+            <span><i class="live-dot"></i> Suas alterações são salvas automaticamente.</span>
+            <div class="footer-actions">
+              <button id="exportButton">Exportar</button>
+              <button id="importButton">Importar</button>
+              <button id="clearCompleted">Limpar concluídas</button>
+              <input type="file" id="importFile" accept="application/json,.json" hidden>
+            </div>
+          </div>
+        </section>
+
+        <footer class="page-footer"><span>© 2026 Taskly</span><span>Seu dia, do seu jeito <b>✦</b></span></footer>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="taskModal" aria-hidden="true">
+    <section class="task-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div><span class="modal-eyebrow">TASKLY WORKSPACE</span><h3 id="modalTitle">Criar nova tarefa</h3><p>Preencha os detalhes e deixe tudo organizado.</p></div>
+        <button class="close-modal" id="closeModal" type="button" aria-label="Fechar">×</button>
+      </div>
+
+      <form id="taskForm">
+        <input type="hidden" id="taskId">
+        <label class="field-label" for="taskTitle">Nome da tarefa <span class="required">*</span></label>
+        <input class="form-control title-input" id="taskTitle" type="text" maxlength="100" placeholder="O que você precisa fazer?" required autocomplete="off">
+
+        <label class="field-label description-label" for="taskDescription">Descrição <span>Opcional</span></label>
+        <textarea class="form-control description-input" id="taskDescription" maxlength="1500" rows="5" placeholder="Escreva os detalhes, ideias ou informações importantes..."></textarea>
+        <div class="field-counter"><span id="descriptionCounter">0</span>/1500</div>
+
+        <div class="form-grid">
+          <div><label class="field-label" for="taskCategory">Categoria</label>
+            <select class="form-control" id="taskCategory"><option>Estudos</option><option>Pessoal</option><option>Trabalho</option><option>Outros</option></select>
+          </div>
+          <div><label class="field-label" for="taskPriority">Prioridade</label>
+            <select class="form-control" id="taskPriority"><option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option></select>
+          </div>
+          <div><label class="field-label" for="taskDate">Data de entrega</label><input class="form-control" id="taskDate" type="date"></div>
+          <div><label class="field-label" for="taskTime">Horário</label><input class="form-control" id="taskTime" type="time"></div>
+        </div>
+
+        <div class="subtasks-editor">
+          <div class="subtasks-title"><label class="field-label" for="subtaskInput">Etapas da tarefa <span>Opcional</span></label><span id="subtaskCount">0 etapas</span></div>
+          <div class="subtask-add-row"><input class="form-control" id="subtaskInput" type="text" maxlength="100" placeholder="Adicionar uma etapa..."><button type="button" id="addSubtaskButton" class="add-subtask-button">＋</button></div>
+          <div id="subtaskEditorList" class="subtask-editor-list"></div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="secondary-button" id="cancelModal" type="button">Cancelar</button>
+          <button class="primary-button" id="saveTaskButton" type="submit">Salvar tarefa <span>→</span></button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="profileModal" aria-hidden="true">
+    <section class="task-modal profile-modal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+      <div class="modal-header">
+        <div><span class="modal-eyebrow">SEU ESPAÇO TASKLY</span><h3 id="profileModalTitle">Seu perfil</h3><p>Personalize seu espaço e mantenha suas tarefas organizadas.</p></div>
+        <button class="close-modal" id="closeProfileModal" type="button" aria-label="Fechar">×</button>
+      </div>
+      <form id="profileForm">
+        <div class="profile-preview">
+          <div class="profile-avatar profile-preview-avatar" id="profilePreviewAvatar">T</div>
+          <div><strong id="profilePreviewName">Meu perfil</strong><span>Perfil ativo</span></div>
+        </div>
+        <label class="field-label" for="profileName">Nome <span class="required">*</span></label>
+        <input class="form-control title-input" id="profileName" type="text" maxlength="45" placeholder="Como podemos te chamar?" required>
+        <label class="field-label" for="profileEmail">E-mail <span>Opcional</span></label>
+        <input class="form-control" id="profileEmail" type="email" maxlength="80" placeholder="seuemail@exemplo.com">
+        <label class="field-label" for="profileBio">Sobre você <span>Opcional</span></label>
+        <textarea class="form-control" id="profileBio" rows="3" maxlength="180" placeholder="Uma pequena descrição..."></textarea>
+        <div class="modal-actions">
+          <button class="secondary-button" id="createProfileButton" type="button">＋ Novo perfil</button>
+          <button class="primary-button" type="submit">Salvar perfil <span>→</span></button>
+        </div>
+      </form>
+      <div class="profile-list-section">
+        <div class="profile-list-heading"><strong>Perfis neste dispositivo</strong><span>Alterne entre seus espaços</span></div>
+        <div id="profileList" class="profile-list"></div>
+      </div>
+      <p class="profile-local-note">Os perfis e as tarefas ficam salvos neste navegador e neste dispositivo.</p>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <input type="file" id="backupFileInput" accept="application/json,.json" hidden>
+</body>
+</html>
