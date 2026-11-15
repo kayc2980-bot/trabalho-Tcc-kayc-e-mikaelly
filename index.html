@@ -237,6 +237,17 @@
             <button class="primary-button" id="signInButton" type="submit">Entrar</button>
           </div>
         </form>
+        <button class="text-button" id="forgotPasswordButton" type="button">Esqueci minha senha?</button>
+        <form id="resetPasswordForm" class="password-reset-form" hidden>
+          <div class="profile-list-heading"><strong>Escolha uma nova senha</strong><span>Recuperação de acesso</span></div>
+          <label class="field-label" for="newPassword">Nova senha</label>
+          <input class="form-control" id="newPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Pelo menos 6 caracteres" required>
+          <label class="field-label" for="confirmNewPassword">Confirme a nova senha</label>
+          <input class="form-control" id="confirmNewPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Digite a senha novamente" required>
+          <div class="modal-actions">
+            <button class="primary-button" type="submit">Salvar nova senha</button>
+          </div>
+        </form>
         <button class="secondary-button" id="signOutButton" type="button" hidden>Sair da conta</button>
         <p class="profile-local-note">Ao entrar, seus perfis e tarefas serão sincronizados com sua conta para você acessá-los em outros dispositivos.</p>
       </div>
