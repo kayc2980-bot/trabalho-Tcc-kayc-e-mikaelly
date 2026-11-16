@@ -84,6 +84,14 @@ function saveTasks() {
   const profile = getActiveProfile();
   profile.tasks = tasks;
   saveProfiles();
+
+  // Envia as alterações das tarefas para o Supabase quando a conta está conectada.
+  if (authUser && cloudSyncReady) {
+    syncTasksToCloud(profile).catch(error => {
+      console.error("Falha ao salvar tarefas na nuvem:", error);
+      showToast("Não foi possível salvar as tarefas na nuvem. Verifique sua conexão e tente novamente.");
+    });
+  }
 }
 
 function makeId() {
